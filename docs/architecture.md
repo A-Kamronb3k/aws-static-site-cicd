@@ -1,18 +1,21 @@
 # AWS Static Site CI/CD Architecture
 
+
 ## Architecture Diagram
+
 ```mermaid
 flowchart LR
-    U([👤 User]) -->|HTTPS| CF[CloudFront CDN\n*.cloudfront.net]
-    CF -->|OAC: faqat CloudFront| S3[(S3 Bucket\nprivate, blocked public)]
-    CF -->|403/404| EP[Custom error page\n404.html]
-    
+    U([👤 User]) -->|HTTPS| CF["CloudFront CDN<br>*.cloudfront.net"]
+    CF -->|OAC: faqat CloudFront| S3[("S3 Bucket<br>private, blocked public")]
+    CF -->|403/404| EP["Custom error page<br>404.html"]
+
     subgraph CI/CD
         DEV([👨‍💻 Developer]) -->|git push| GH[GitHub main]
         GH --> GA[GitHub Actions]
         GA -->|OIDC keyless| S3
         GA -->|invalidation| CF
-    end```
+    end
+```
 
 ## Overview
 This project is a fast, modern static website built with Astro and hosted securely on Amazon Web Services (AWS). 
