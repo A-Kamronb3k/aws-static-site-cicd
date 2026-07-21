@@ -1,5 +1,8 @@
 # AWS Static Site with CloudFront CDN & CI/CD
 
+[![Deploy](https://github.com/A-Kamronb3k/aws-static-site-cicd/actions/workflows/deploy.yml/badge.svg)](https://github.com/A-Kamronb3k/aws-static-site-cicd/actions/workflows/deploy.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+
 A production-style static website hosted on a **private S3 bucket**, served globally 
 through **CloudFront with Origin Access Control (OAC)**, and deployed automatically 
 via **GitHub Actions with OIDC** (no stored AWS keys).
@@ -13,7 +16,7 @@ via **GitHub Actions with OIDC** (no stored AWS keys).
 ```mermaid
 flowchart LR
     U([👤 User]) -->|HTTPS| CF["CloudFront CDN<br>*.cloudfront.net"]
-    CF -->|OAC: faqat CloudFront| S3[("S3 Bucket<br>private, blocked public")]
+    CF -->|OAC: CloudFront only| S3[("S3 Bucket<br>private, blocked public")]
     CF -->|403/404| EP["Custom error page<br>404.html"]
     
     subgraph CI/CD
@@ -50,7 +53,6 @@ flowchart LR
 |---|---|
 | Checkout + Node setup | Prepares the build environment |
 | `npm ci` + `npm run build` | Builds the site into `dist/` |
-| Link check | Fails the build if internal links are broken |
 | Configure AWS (OIDC) | Assumes an IAM role — no long-lived keys |
 | `aws s3 sync --delete` | Uploads only changed files, removes stale ones |
 | CloudFront invalidation | Clears the CDN cache |
@@ -67,6 +69,20 @@ flowchart LR
 Runs at **$0**: CloudFront always-free tier (1 TB egress/month), a tiny S3 storage 
 footprint, and free invalidations (first 1,000 paths/month). **No Route 53** — the 
 free `*.cloudfront.net` domain provides HTTPS out of the box.
+
+## Configuration (GitHub Secrets)
+
+| Secret | Purpose |
+|---|---|
+| `AWS_ROLE_ARN` | IAM role assumed by the workflow via OIDC |
+| `S3_BUCKET` | Target bucket for `aws s3 sync` |
+| `CLOUDFRONT_DISTRIBUTION_ID` | Distribution to invalidate after each deploy |
+
+The AWS side (bucket, CloudFront distribution with OAC, OIDC provider + IAM role) was set up
+via the console for this first project — `bucket-policy.json` in the repo root documents the
+exact policy locking the bucket to this distribution. Project 3
+([serverless-notes-terraform](https://github.com/A-Kamronb3k/serverless-notes-terraform))
+implements the same pattern 100% in Terraform.
 
 ## Running Locally
 

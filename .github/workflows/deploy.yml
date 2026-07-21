@@ -1,11 +1,11 @@
 name: Deploy static site
 
-# Qachon ishga tushadi: main'ga push bo'lganda
+# Runs on every push to main
 on:
   push:
     branches: [main]
 
-# OIDC uchun kerak: token olish huquqi
+# Required for OIDC: permission to request the identity token
 permissions:
   id-token: write
   contents: read
@@ -14,37 +14,37 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      # 1. Repo kodini olish
+      # 1. Check out the repository
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 2. Node o'rnatish
+      # 2. Set up Node
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
 
-      # 3. Kutubxonalarni o'rnatish (lock faylga qat'iy amal qilib)
+      # 3. Install dependencies (strictly from the lock file)
       - name: Install dependencies
         run: npm ci
 
-      # 4. Saytni build qilish -> dist/
+      # 4. Build the site -> dist/
       - name: Build site
         run: npm run build
 
-      # 5. AWS'ga OIDC orqali kirish (kalitsiz!)
+      # 5. Authenticate to AWS via OIDC (keyless!)
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: eu-north-1
 
-      # 6. dist/ ni S3'ga sync qilish
+      # 6. Sync dist/ to S3
       - name: Sync to S3
         run: aws s3 sync ./dist s3://${{ secrets.S3_BUCKET }} --delete
 
-      # 7. CloudFront keshini tozalash (eng muhim qadam!)
+      # 7. Invalidate the CloudFront cache (the step everyone forgets)
       - name: Invalidate CloudFront cache
         run: |
           aws cloudfront create-invalidation \
